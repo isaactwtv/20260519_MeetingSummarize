@@ -7,16 +7,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT || "3000", 10);
 
 // Initialize Gemini
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || "",
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    }
-  }
 });
 
 app.use(express.json());
@@ -46,8 +41,9 @@ app.post("/api/generate", async (req, res) => {
   }
 
   try {
+    const modelName = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: modelName,
       contents: content,
       config: {
         systemInstruction: SYSTEM_PROMPT,
@@ -83,4 +79,10 @@ async function startServer() {
   });
 }
 
-startServer();
+// Only start the standalone Express server if we are not in a serverless environment (like Vercel)
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;
+
